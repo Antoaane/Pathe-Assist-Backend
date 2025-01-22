@@ -10,7 +10,7 @@ const seedData = async () => {
         const cinema = new Cinema({
             id: "8yBUd8gSU65j2gzKe7F4",
             login: "pathe-labege",
-            password: "labege123", // Remplacer par un mot de passe haché
+            password: "$2y$10$duQi7ZheUi2M6tlD.Tt.PODS0hb8M6zNMoxz07yjYEvKWHmfkLppq", // Remplacer par un mot de passe haché
             sessions: [] // Une session vide pour démarrer
         });
 

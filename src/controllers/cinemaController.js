@@ -68,7 +68,6 @@ function removeDuplicates(jsonArray) {
 
 const addSession = async (req, res) => {
     const filePath = req.file.path; 
-    const fileName = req.file.originalname; 
 
     const prompt = `Analyse de l'image. Récupères TOUTES les lignes du tableau de l'image jointe et que tu me les transformes en des objets JSON ayant les caractéristiques suivantes : name, room, ban, start, play, end. Pour les salles, note uniquement le numéro ou nom de la salle (exemple : "8, IMAX, etc" et non "salle 8, salle IMAX etc"). Pour les ban, cela correspond simplement à la colonne des interdictions. Inscris-y simplement ce que tu y vois d'écrit.
 
@@ -101,12 +100,8 @@ const addSession = async (req, res) => {
 
         if (jsonResponse) {
             const data = extractJson(jsonResponse.response.text())
-            // res.status(200).json(data);
-            // return
-            
-            const params = req.params;
-            const cinema = await Cinema.findOne({ id: params.id });
-
+        
+            const cinema = await Cinema.findOne({ id: req.cinemaId });
             const sessions = cinema.sessions;
         
             data.forEach(film => {
@@ -121,21 +116,17 @@ const addSession = async (req, res) => {
         }
         
     } catch (error) {
-        console.error(`Erreur :`, error.message);
         res.status(500).json({ message: error.message });
     }
-
-    // res.status(200).json(filePath);
 };
 
 // Récupérer les séances d'un cinéma
 const getCinemaSessions = async (req, res) => {
     try {
-        const { id } = req.params;
-        const cinema = await Cinema.findOne({ id });
+        const cinema = await Cinema.findOne({ id : req.cinemaId });
         if (!cinema) return res.status(404).json({ message: "Cinema not found." });
 
-        res.status(200).json(cinema.sessions);
+        res.status(200).json(cinema);
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
