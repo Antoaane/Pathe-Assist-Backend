@@ -1,9 +1,12 @@
 const express = require('express');
-const { getCinemaSessions, updateSession, addSession } = require('../controllers/cinemaController');
+const multer = require("multer");
+const axios = require("axios");
+const { getCinemaSessions, addSession } = require('../controllers/cinemaController');
+
 const router = express.Router();
+const upload = multer({ dest: "uploads/" });
 
 router.get('/:id/sessions', getCinemaSessions);
-router.put('/:cinemaId/sessions/:sessionId', updateSession);
-router.post('/:id/sessions', addSession);
+router.post('/:id/sessions', upload.single("image"), addSession);
 
 module.exports = router;

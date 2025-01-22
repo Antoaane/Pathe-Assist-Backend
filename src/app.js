@@ -11,7 +11,7 @@ app.use(cors());
 app.use(express.json());
 
 // Routes
-app.use('/api/cinemas', cinemaRoutes);
+app.use('/api', cinemaRoutes);
 
 // Database connection
 connectDB();
