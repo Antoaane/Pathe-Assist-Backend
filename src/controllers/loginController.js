@@ -20,7 +20,7 @@ const generateToken = (cinemaId) => {
     return jwt.sign(
         { cinemaId }, // Inclure l'identifiant du cinéma dans le payload
         JWT_SECRET,
-        { expiresIn: "15h" } // Durée de validité
+        { expiresIn: "168h" } // Durée de validité
     );
 };
 
