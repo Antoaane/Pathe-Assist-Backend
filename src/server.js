@@ -1,6 +1,6 @@
-const app = require('./app');
+const { server } = require('./app'); // Importe le serveur HTTP partagé
 const PORT = process.env.PORT || 5000;
 
-app.listen(PORT, () => {
+server.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
 });

@@ -3,31 +3,18 @@ const jwt = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
 require('dotenv').config();
 
-const password = "path3_lAbege-429/";
-
-// // Génère un hash avec 10 "rounds" (niveau de complexité)
-// bcrypt.hash(password, 10, (err, hash) => {
-//     if (err) {
-//         console.error(err);
-//         return;
-//     }
-//     console.log("Hash généré :", hash);
-// });
-
 const generateToken = (cinemaId) => {
-    const JWT_SECRET = process.env.JWT_SECRET; // Charge ta clé secrète depuis l'environnement
+    const JWT_SECRET = process.env.JWT_SECRET;
 
     return jwt.sign(
-        { cinemaId }, // Inclure l'identifiant du cinéma dans le payload
+        { cinemaId },
         JWT_SECRET,
-        { expiresIn: "168h" } // Durée de validité
+        { expiresIn: "168h" }
     );
 };
 
 const validatePassword = async (cinema, password) => {
-
     const storedHash = cinema.password;
-
     const validation = await bcrypt.compare(password, storedHash, (err, isMatch) => {
 
         if (err) {
@@ -58,12 +45,18 @@ const login = async (req, res) => {
                 newToken,
             });
         } else {
-            res.status(500).json({erreur: "Identifiants incorrectes"})
+            res.status(500).json({ erreur: "Identifiants incorrectes" })
         }
 
     } else {
-        res.status(500).json({erreur: "champs incomplets"})
+        res.status(500).json({ erreur: "champs incomplets" })
     }
 }
 
-module.exports = { login };
+const verifyToken = async (req, res) => {
+    if (req.cinemaId) { 
+        res.status(200).json({ message: "token valide." })
+    }
+}
+
+module.exports = { login, verifyToken };

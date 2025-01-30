@@ -27,7 +27,6 @@ const timeToMinutes = (time) => {
         return null;
     }
     
-    
 };
 
 const convertFileToBase64 = (filePath) => {
@@ -58,23 +57,39 @@ const extractJson = (responseText) => {
 
 const sendImageToGemini = async (base64Image, prompt) => {
 
-    try {
-        const model = genAI.getGenerativeModel({ model: "gemini-1.5-pro" });
+    const models = ['gemini-1.5-flash', 'gemini-1.5-pro', 'gemini-1.5-flash-8b']
+    let i = 0;
 
-        const result = await model.generateContent([
-            prompt, { 
-                inlineData: { 
-                    mimeType: "image/jpeg", 
-                    data: base64Image 
-                } 
-            },
-        ]);
-        
-        return result;
-    } catch (error) {
-        console.error("Erreur Gemini :", error);
-        return null;
+    async function fetchSessionsJson(model) {
+        try {
+            const usedModel = genAI.getGenerativeModel({ model: model });
+    
+            const result = await usedModel.generateContent([
+                prompt, { 
+                    inlineData: { 
+                        mimeType: "image/jpeg", 
+                        data: base64Image 
+                    } 
+                },
+            ]);
+            
+            console.log(result);
+            return result;
+        } catch (error) {
+            console.error("Erreur Gemini :", error);
+
+            i++
+ 
+            if (i < models.length) {
+                return fetchSessionsJson(models[i]);
+            } else {
+                console.error("Tous les modèles ont échoué.");
+                return null;
+            }
+        }
     }
+
+    return await fetchSessionsJson(models[i]);
 };
 
 const removeDuplicates = async (array) => {
@@ -96,28 +111,39 @@ const removeDuplicates = async (array) => {
 const assignNextSession = (sessions) => {
     let sortedSessions = [...sessions].sort((a, b) => timeToMinutes(a.end) - timeToMinutes(b.end));
 
-    // sortedSessions[44].next = [{
-    //     "test": "test"
-    // }];
-
-    // const testSession = sortedSessions[44];
-
     sortedSessions.forEach((currentSession) => {
+        const sameRoomSessions = [];
+
         sortedSessions.forEach((sessionToCompare) => {
-            if ((currentSession.room === sessionToCompare.room) && (timeToMinutes(currentSession.start) - timeToMinutes(sessionToCompare.start) < 0)) {
-                currentSession.next = sessionToCompare;
+            if (currentSession.room === sessionToCompare.room && timeToMinutes(sessionToCompare.start) >= timeToMinutes(currentSession.end)) {
+                sameRoomSessions.push(sessionToCompare);
             }
         });
-    });
 
-    sortedSessions.forEach((cleaning) => {
-        if (cleaning.next) {
-            if (cleaning.next.next) {
-                console.log(cleaning);
-                cleaning.next.next = null;
+        let nearestSession = null;
+        let shortestTime = Infinity;
+
+        sameRoomSessions.forEach((sameRoomSession) => {
+            const timeLeft = timeToMinutes(sameRoomSession.start) - timeToMinutes(currentSession.start);
+
+            if (timeLeft >= 0 && timeLeft < shortestTime) {
+                shortestTime = timeLeft;
+                nearestSession = sameRoomSession;
             }
+        });
+
+        if (nearestSession) {
+            currentSession.next = nearestSession;
+        } else {
+            currentSession.next = null
         }
     });
+
+    // sortedSessions.forEach((session) => {
+    //     if (session.next) {
+    //         session.next.next = null;
+    //     }
+    // });
 
     return sortedSessions; 
 };
@@ -152,6 +178,7 @@ const addSession = async (req, res) => {
 
     try {
         const base64Image = await convertFileToBase64(filePath);
+        const jsonResponse = await sendImageToGemini(base64Image, prompt);   
         // const jsonResponse = [
         //     {
         //         "name": "Ma mini-séance : Mon beau sapin",
@@ -453,8 +480,8 @@ const addSession = async (req, res) => {
         //     {
         //         "name": "SONIC 3 - le film",
         //         "room": "4DX",
-        //         "ban": "TP",
         //         "start": "13:45",
+        //         "ban": "TP",  
         //         "play": "14:05",
         //         "end": "15:55",
         //         "validation": false,
@@ -868,8 +895,7 @@ const addSession = async (req, res) => {
         //         "_id": "6794d5e65bed3a53ba546f2e",
         //         "id": 64
         //     }
-        // ]
-        const jsonResponse = await sendImageToGemini(base64Image, prompt);     
+        // ];
 
         if (jsonResponse) {
             const cinema = await Cinema.findOne({ id: req.cinemaId });
@@ -892,6 +918,7 @@ const addSession = async (req, res) => {
             });
 
             const nextSessions = assignNextSession(finalSessions);
+            // cinema.sessions = [];
             cinema.sessions = nextSessions;
 
             await cinema.save();
@@ -929,15 +956,32 @@ const validateSession = async (req, res) => {
         const cinema = await Cinema.findOne({ id : req.cinemaId });
         const sessionIndex = req.params.sessionId;
         const status = req.body.validationStatus;
+        const param = req.body.validationParam;
 
-        cinema.sessions[sessionIndex].validation = status;
+        // console.log(cinema.sessions.find((s) => s.id == sessionIndex));
+
+        cinema.sessions.find((s) => s.id == req.params.sessionId)[param] = status;
 
         await cinema.save();
 
-        res.status(200).json({ message: cinema.sessions[sessionIndex] });
+        res.status(200).json({ message: cinema.sessions.find((s) => s.id == sessionIndex) });
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
 };
 
-module.exports = { addSession, getCinemaSessions, validateSession };
+const resetCinemaSessions = async (req, res) => {
+    try {
+        const cinema = await Cinema.findOne({ id : req.cinemaId });
+        cinema.sessions = [];
+
+        console.log(req);
+
+        await cinema.save();
+        res.status(200).json({ message: "sessions cleared" });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+module.exports = { addSession, getCinemaSessions, validateSession, resetCinemaSessions };

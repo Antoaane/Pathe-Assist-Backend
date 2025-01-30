@@ -7,7 +7,8 @@ const sessionSchema = new mongoose.Schema({
     start: { type: String, required: true },
     play: { type: String, required: true },
     end: { type: String, required: true },
-    validation: { type: Boolean, required: true, default: false },
+    cleared: { type: Boolean, required: true, default: false },
+    closed: { type: Boolean, required: true, default: false },
     id: { type: Number, required: true },
     next: { type: Object, default: {}}
 });
