@@ -8,7 +8,7 @@ const { getCinemaSessions, validateSession, addSession, resetCinemaSessions } = 
 const router = express.Router();
 const upload = multer({ dest: "uploads/" });
 
-app.get('/', (req, res) => {
+router.get('/', (req, res) => {
     res.send('Backend is running!');
 });
 
