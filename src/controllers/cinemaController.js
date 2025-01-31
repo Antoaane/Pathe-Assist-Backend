@@ -29,6 +29,28 @@ const timeToMinutes = (time) => {
     
 };
 
+const sortTimes = (films) => {
+    return films.map(film => {
+        // Extraire les heures et les convertir en minutes pour un tri correct
+        const times = [
+            { key: "start", value: film.start },
+            { key: "play", value: film.play },
+            { key: "end", value: film.end }
+        ];
+
+        // Trier les heures par ordre croissant
+        times.sort((a, b) => timeToMinutes(a.value) - timeToMinutes(b.value));
+
+        // Retourner un nouvel objet avec les heures triées dans l'ordre souhaité
+        return {
+            ...film,
+            start: times[0].value,
+            play: times[1].value,
+            end: times[2].value
+        };
+    });
+}
+
 const convertFileToBase64 = (filePath) => {
     return new Promise((resolve, reject) => {
         fs.readFile(filePath, (err, data) => {
@@ -57,7 +79,7 @@ const extractJson = (responseText) => {
 
 const sendImageToGemini = async (base64Image, prompt) => {
 
-    const models = ['gemini-1.5-flash', 'gemini-1.5-pro', 'gemini-1.5-flash-8b']
+    const models = ['gemini-1.5-pro', 'gemini-1.5-flash', 'gemini-1.5-flash-8b']
     let i = 0;
 
     async function fetchSessionsJson(model) {
@@ -73,7 +95,7 @@ const sendImageToGemini = async (base64Image, prompt) => {
                 },
             ]);
             
-            console.log(result);
+            console.log(result.response.text());
             return result;
         } catch (error) {
             console.error("Erreur Gemini :", error);
@@ -151,14 +173,14 @@ const assignNextSession = (sessions) => {
 const addSession = async (req, res) => {
     const filePath = req.file.path; 
 
-    const prompt = `Analyse de l'image. Récupères TOUTES les lignes du tableau de l'image jointe et que tu me les transformes en des objets JSON ayant les caractéristiques suivantes : name, room, ban, start, play, end. Pour les salles, note uniquement le numéro ou nom de la salle (exemple : "8, IMAX, etc" et non "salle 8, salle IMAX etc"). Pour les ban, cela correspond simplement à la colonne des interdictions. Inscris-y simplement ce que tu y vois d'écrit.
+    const prompt = `Analyse de l'image. Récupères TOUTES les lignes du tableau de l'image jointe et que tu me les transformes en des objets JSON ayant les caractéristiques suivantes : name, room, ban, start, play, end. Pour les salles, note uniquement le numéro ou nom de la salle (exemple : "8, IMAX, etc" et non "salle 8, salle IMAX etc"). Pour les ban, cela correspond simplement à la colonne des interdictions. Inscris-y simplement ce que tu y vois d'écrit. La colonne "Début" correspond à "start", "Film" correspond à "play" et "Fin du film" correspond à "end".
 
     Exemple :
     [
         {
             "name": "Le Seigneur des Anneaux: La Guerre des Rohirrim",
             "room": "11",
-            "ban" : "-12, etc"
+            "ban" : "-12, etc",
             "start": "16:45",
             "play": "17:05",
             "end": "19:19"
@@ -166,7 +188,7 @@ const addSession = async (req, res) => {
         {
             "name": "Vaiana 2",
             "room": "9",
-            "ban" : "TP"
+            "ban" : "TP",
             "start": "17:30",
             "play": "17:50",
             "end": "19:29"
@@ -897,6 +919,177 @@ const addSession = async (req, res) => {
         //     }
         // ];
 
+        // const jsonResponse = [
+        //     {
+        //       "name": "Gladiator II",
+        //       "room": "12",
+        //       "ban": "-12",
+        //       "start": "19:30",
+        //       "play": "19:15",
+        //       "end": "22:00"
+        //     },
+        //     {
+        //       "name": "Mufasa : Le Roi Lion",
+        //       "room": "IMAX",
+        //       "ban": "TP",
+        //       "start": "20:05",
+        //       "play": "19:45",
+        //       "end": "22:05"
+        //     },
+        //     {
+        //       "name": "La chambre d'à côté",
+        //       "room": "11",
+        //       "ban": "TP",
+        //       "start": "20:20",
+        //       "play": "20:00",
+        //       "end": "22:07"
+        //     },
+        //     {
+        //       "name": "Mufasa : Le Roi Lion",
+        //       "room": "16",
+        //       "ban": "TP",
+        //       "start": "20:10",
+        //       "play": "19:50",
+        //       "end": "22:10"
+        //     },
+        //     {
+        //       "name": "Conclave",
+        //       "room": "4",
+        //       "ban": "TP",
+        //       "start": "20:20",
+        //       "play": "20:00",
+        //       "end": "22:20"
+        //     },
+        //     {
+        //       "name": "Pirates des Caraïbes : la Malédiction",
+        //       "room": "3",
+        //       "ban": "TP",
+        //       "start": "21:20",
+        //       "play": "21:00",
+        //       "end": "23:43"
+        //     },
+        //     {
+        //       "name": "Wicked",
+        //       "room": "10",
+        //       "ban": "TP",
+        //       "start": "21:05",
+        //       "play": "20:45",
+        //       "end": "23:46"
+        //     },
+        //     {
+        //       "name": "La chambre d'à côté",
+        //       "room": "7",
+        //       "ban": "TP",
+        //       "start": "22:00",
+        //       "play": "21:40",
+        //       "end": "23:47"
+        //     },
+        //     {
+        //       "name": "SONIC 3 - le film",
+        //       "room": "9",
+        //       "ban": "TP",
+        //       "start": "22:10",
+        //       "play": "21:50",
+        //       "end": "00:00"
+        //     },
+        //     {
+        //       "name": "Mufasa : Le Roi Lion",
+        //       "room": "8",
+        //       "ban": "TP",
+        //       "start": "22:20",
+        //       "play": "22:00",
+        //       "end": "00:20"
+        //     },
+        //     {
+        //       "name": "La Fille d'un grand amour",
+        //       "room": "16",
+        //       "ban": "TP",
+        //       "start": "22:50",
+        //       "play": "22:30",
+        //       "end": "00:24"
+        //     },
+        //     {
+        //       "name": "Sous écrous",
+        //       "room": "12",
+        //       "ban": "TP",
+        //       "start": "22:35",
+        //       "play": "22:15",
+        //       "end": "00:25"
+        //     },
+        //     {
+        //       "name": "L'Amour ouf",
+        //       "room": "6",
+        //       "ban": "AVERT",
+        //       "start": "21:50",
+        //       "play": "21:30",
+        //       "end": "00:30"
+        //     },
+        //     {
+        //       "name": "Nosferatu",
+        //       "room": "15",
+        //       "ban": "-12 +Avt",
+        //       "start": "22:20",
+        //       "play": "22:00",
+        //       "end": "00:32"
+        //     },
+        //     {
+        //       "name": "Mufasa : Le Roi Lion",
+        //       "room": "4DX",
+        //       "ban": "TP",
+        //       "start": "22:35",
+        //       "play": "22:15",
+        //       "end": "00:35"
+        //     },
+        //     {
+        //       "name": "Gladiator II",
+        //       "room": "14",
+        //       "ban": "-12",
+        //       "start": "22:05",
+        //       "play": "21:45",
+        //       "end": "00:35"
+        //     },
+        //     {
+        //       "name": "Kraven le chasseur",
+        //       "room": "5",
+        //       "ban": "AVERT",
+        //       "start": "22:30",
+        //       "play": "22:10",
+        //       "end": "00:37"
+        //     },
+        //     {
+        //       "name": "L'Amour au présent",
+        //       "room": "11",
+        //       "ban": "TP",
+        //       "start": "22:50",
+        //       "play": "22:30",
+        //       "end": "00:37"
+        //     },
+        //     {
+        //       "name": "Un ours dans le Jura",
+        //       "room": "4",
+        //       "ban": "AVERT",
+        //       "start": "22:50",
+        //       "play": "22:30",
+        //       "end": "00:43"
+        //     },
+        //     {
+        //       "name": "Criminal Squad: Pantera",
+        //       "room": "1",
+        //       "ban": "TP",
+        //       "start": "22:35",
+        //       "play": "22:15",
+        //       "end": "00:45"
+        //     },
+        //     {
+        //       "name": "Nosferatu",
+        //       "room": "IMAX",
+        //       "ban": "-12 +Avt",
+        //       "start": "22:40",
+        //       "play": "22:20",
+        //       "end": "00:52"
+        //     }
+        // ];
+
         if (jsonResponse) {
             const cinema = await Cinema.findOne({ id: req.cinemaId });
             const initialSessions = cinema.sessions;
@@ -907,7 +1100,7 @@ const addSession = async (req, res) => {
                 initialSessions.push(film);
             });
 
-            const sessions = await removeDuplicates(initialSessions);
+            const sessions = sortTimes(await removeDuplicates(initialSessions));
             const finalSessions = [];
 
             let i = 0;
@@ -918,8 +1111,9 @@ const addSession = async (req, res) => {
             });
 
             const nextSessions = assignNextSession(finalSessions);
-            // cinema.sessions = [];
             cinema.sessions = nextSessions;
+
+            // console.log(cinema.sessions);
 
             await cinema.save();
             res.status(200).json(cinema);
