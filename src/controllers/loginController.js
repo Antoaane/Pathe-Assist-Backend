@@ -56,6 +56,8 @@ const login = async (req, res) => {
 const verifyToken = async (req, res) => {
     if (req.cinemaId) { 
         res.status(200).json({ message: "token valide." })
+    } else {
+        res.status(403).json({ message: "token invalide." })
     }
 }
 
