@@ -9,7 +9,7 @@ const generateToken = (cinemaId) => {
     return jwt.sign(
         { cinemaId },
         JWT_SECRET,
-        { expiresIn: "168h" }
+        { expiresIn: "600h" }
     );
 };
 
