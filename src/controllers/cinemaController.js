@@ -79,7 +79,7 @@ const extractJson = (responseText) => {
 
 const sendImageToGemini = async (base64Image, prompt) => {
 
-    const models = ['gemini-1.5-pro', 'gemini-1.5-flash', 'gemini-1.5-flash-8b']
+    const models = ['gemini-2.0-flash', 'gemini-2.0-pro-exp-02-05']
     let i = 0;
 
     async function fetchSessionsJson(model) {
@@ -95,7 +95,7 @@ const sendImageToGemini = async (base64Image, prompt) => {
                 },
             ]);
             
-            console.log(result.response.text());
+            console.log(`${model} : `, result.response.text());
             return result;
         } catch (error) {
             console.error("Erreur Gemini :", error);
@@ -1151,8 +1151,6 @@ const validateSession = async (req, res) => {
         const sessionIndex = req.params.sessionId;
         const status = req.body.validationStatus;
         const param = req.body.validationParam;
-
-        // console.log(cinema.sessions.find((s) => s.id == sessionIndex));
 
         cinema.sessions.find((s) => s.id == req.params.sessionId)[param] = status;
 
